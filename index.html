@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#101216">
+<title>距離計｜二重像合致のピント練習</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  :root{
+    --bg:#101216;
+    --panel:#1a1d23;
+    --panel2:#22262e;
+    --ink:#eceff4;
+    --muted:#9aa3b2;
+    --line:#333947;
+    --amber:#e0a458;
+    --red:#e5322d;
+    --ok:#3ecf6f;
+    --warn:#ffb84d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.55;
+  }
+  .wrap{max-width:430px;margin:0 auto;padding:14px 12px 28px}
+  header.top{display:flex;align-items:center;gap:10px;margin:2px 0 12px}
+  .dot{width:14px;height:14px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 0 0 3px rgba(229,50,45,.18)}
+  header.top h1{font-size:21px;margin:0;letter-spacing:.14em;font-weight:700}
+  header.top p{margin:0;color:var(--muted);font-size:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .card h2{font-size:14px;margin:0 0 8px;letter-spacing:.06em;color:var(--amber);font-weight:700}
+  .finderbox{background:#000;border-radius:10px;overflow:hidden;border:1px solid #000}
+  svg.finder{display:block;width:100%;height:auto}
+  .statusrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--muted)}
+  .badge.ok{color:#06280f;background:var(--ok);border-color:var(--ok);font-weight:700}
+  .badge.off{color:#2a1a00;background:var(--warn);border-color:var(--warn);font-weight:700}
+  .focusread{font-size:20px;font-weight:700;letter-spacing:.03em}
+  .focusread small{font-size:12px;color:var(--muted);font-weight:400}
+  input[type=range]{width:100%;margin:10px 0 2px;accent-color:var(--amber);height:32px}
+  .ticks{position:relative;height:18px;margin:0 2px}
+  .ticks span{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--muted);white-space:nowrap}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  button{
+    font:inherit;font-size:14px;color:var(--ink);background:var(--panel2);
+    border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;
+  }
+  button:active{transform:translateY(1px)}
+  button.sel{background:var(--amber);border-color:var(--amber);color:#1c1503;font-weight:700}
+  button.primary{background:var(--amber);border-color:var(--amber);color:#1c1503;font-weight:700}
+  button:disabled{opacity:.4;cursor:default}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{padding:7px 10px;font-size:13px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .grid button{text-align:left;font-size:13px;padding:9px 10px}
+  .grid button small{display:block;color:var(--muted);font-size:11px}
+  .grid button.sel small{color:#4a3603}
+  .dofvals{display:flex;gap:8px;flex-wrap:wrap}
+  .dofval{flex:1;min-width:96px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .dofval .lab{font-size:11px;color:var(--muted)}
+  .dofval .num{font-size:17px;font-weight:700}
+  .depthbar{position:relative;height:30px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;margin-top:10px}
+  .depthseg{position:absolute;top:8px;height:12px;background:rgba(62,207,111,.45);border:1px solid var(--ok);border-radius:6px}
+  .depthmark{position:absolute;top:3px;width:2px;height:22px;background:var(--amber)}
+  .depthmark.subj{background:#7ab8ff}
+  .depthticks{position:relative;height:16px;margin-top:2px}
+  .depthticks span{position:absolute;transform:translateX(-50%);font-size:10px;color:var(--muted);white-space:nowrap}
+  .legend{font-size:11px;color:var(--muted);margin-top:2px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 3px 0 8px;vertical-align:-1px}
+  table.guide{width:100%;border-collapse:collapse;font-size:13px}
+  table.guide th,table.guide td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+  table.guide th{color:var(--muted);font-weight:600;font-size:12px}
+  .result{font-size:15px;margin-top:8px;min-height:24px}
+  .result .err{font-weight:700;color:var(--amber)}
+  textarea,input[type=text]{
+    width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--panel2);
+    border:1px solid var(--line);border-radius:10px;padding:9px 10px;
+  }
+  textarea{resize:vertical;min-height:44px}
+  .logitem{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-top:8px;background:var(--panel2)}
+  .logitem .meta{font-size:12px;color:var(--muted)}
+  .logitem .main{font-size:14px;font-weight:600}
+  .logitem .memo{font-size:13px;white-space:pre-wrap;word-break:break-word}
+  .logitem .del{float:right;font-size:12px;padding:4px 8px}
+  .empty{color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:10px;padding:12px;margin-top:8px}
+  .howto{font-size:13.5px}
+  .howto li{margin-bottom:5px}
+  .note{font-size:12px;color:var(--muted)}
+  footer.muse{margin-top:16px;text-align:center;font-size:12.5px;color:var(--muted)}
+  footer.muse a{color:var(--amber)}
+  .unitrow{display:flex;gap:6px;align-items:center}
+  .unitrow .lab{font-size:12px;color:var(--muted);margin-right:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="dot"></div>
+    <div>
+      <h1>距離計</h1>
+      <p>レンジファインダー二重像合致のピント練習シミュレーター</p>
+    </div>
+  </header>
+
+  <!-- ファインダー -->
+  <div class="card">
+    <h2>ファインダー（二重像）</h2>
+    <div class="finderbox">
+      <svg class="finder" viewBox="0 0 360 240" role="img" aria-label="ファインダー像">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5b7292"/>
+            <stop offset="0.62" stop-color="#93a7bd"/>
+            <stop offset="0.621" stop-color="#4c4a44"/>
+            <stop offset="1" stop-color="#35322c"/>
+          </linearGradient>
+          <clipPath id="patchClip"><rect x="118" y="56" width="124" height="128"/></clipPath>
+          <g id="personShape">
+            <circle cx="0" cy="-112" r="12" fill="currentColor"/>
+            <path d="M-11,-98 Q0,-105 11,-98 L15,-38 L7,-38 L5,0 L-5,0 L-7,-38 L-15,-38 Z" fill="currentColor"/>
+          </g>
+        </defs>
+        <rect x="0" y="0" width="360" height="240" fill="url(#sky)"/>
+        <!-- 街並み -->
+        <g fill="#2e3440">
+          <rect x="6" y="66" width="52" height="84"/>
+          <rect x="64" y="48" width="40" height="102"/>
+          <rect x="258" y="56" width="44" height="94"/>
+          <rect x="308" y="76" width="46" height="74"/>
+        </g>
+        <g fill="#c9d6e6" opacity="0.75">
+          <rect x="14" y="78" width="9" height="12"/><rect x="30" y="78" width="9" height="12"/>
+          <rect x="14" y="100" width="9" height="12"/><rect x="72" y="60" width="9" height="12"/>
+          <rect x="72" y="84" width="9" height="12"/><rect x="266" y="68" width="9" height="12"/>
+          <rect x="282" y="68" width="9" height="12"/><rect x="316" y="88" width="9" height="12"/>
+        </g>
+        <!-- 街灯のポール（中央） -->
+        <rect x="178.6" y="34" width="2.8" height="118" fill="#20242c"/>
+        <circle cx="180" cy="30" r="6" fill="#ffe9a8"/>
+        <!-- 被写体（人物）本体 -->
+        <use href="#personShape" id="personMain" style="color:#0a0c10"/>
+        <!-- 距離計パッチ内の二重像 -->
+        <rect x="118" y="56" width="124" height="128" fill="rgba(255,255,255,0.10)"/>
+        <g clip-path="url(#patchClip)">
+          <g id="ghostGroup" style="color:#ffcf7d" opacity="0.65">
+            <rect id="ghostPole" x="178.6" y="34" width="2.8" height="118" fill="currentColor"/>
+            <use href="#personShape" id="personGhost"/>
+          </g>
+        </g>
+        <rect x="118" y="56" width="124" height="128" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <!-- ブライトフレーム -->
+        <rect id="brightFrame" x="68" y="42" width="224" height="156" fill="none" stroke="#f2f4f7" stroke-width="1.6"/>
+      </svg>
+    </div>
+    <div class="statusrow">
+      <span class="badge" id="subjBadge">被写体：路地の人物（3.00 m）</span>
+      <span class="badge ok" id="matchBadge">合焦</span>
+    </div>
+    <p class="note" style="margin:8px 0 0">中央の明るい枠（距離計パッチ）の中で像が二重にずれます。距離環を動かして、本体の像と重なれば合焦です。</p>
+  </div>
+
+  <!-- 距離環 -->
+  <div class="card">
+    <h2>距離環</h2>
+    <div class="focusread"><small>合焦距離　</small><span id="focusRead">3.00 m</span></div>
+    <input type="range" id="ring" min="0" max="16" step="1" value="9" aria-label="距離環">
+    <div class="ticks" id="ticks"></div>
+    <div class="btnrow">
+      <button id="nearBtn" type="button">◀ 近く</button>
+      <button id="farBtn" type="button">遠く ▶</button>
+    </div>
+    <div class="btnrow">
+      <button id="hyperBtn" type="button">過焦点に合わせる</button>
+      <button id="zoneBtn" type="button">ゾーンフォーカス f/8</button>
+      <button id="subjBtn" type="button">被写体距離に合わせる</button>
+    </div>
+  </div>
+
+  <!-- 被写体・レンズ設定 -->
+  <div class="card">
+    <h2>被写体プリセット</h2>
+    <div class="grid" id="presets"></div>
+    <h2 style="margin-top:14px">焦点距離（mm）</h2>
+    <div class="seg" id="focals"></div>
+    <h2 style="margin-top:14px">絞り</h2>
+    <div class="seg" id="apertures"></div>
+    <div class="unitrow" style="margin-top:14px">
+      <span class="lab">単位</span>
+      <div class="seg" id="units">
+        <button type="button" data-unit="m" class="sel">m</button>
+        <button type="button" data-unit="ft">ft</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 被写界深度 -->
+  <div class="card">
+    <h2>被写界深度（フルサイズ／許容錯乱円 0.029mm）</h2>
+    <div class="dofvals">
+      <div class="dofval"><div class="lab">前端 Near</div><div class="num" id="dofNear">1.92 m</div></div>
+      <div class="dofval"><div class="lab">後端 Far</div><div class="num" id="dofFar">6.84 m</div></div>
+      <div class="dofval"><div class="lab">過焦点距離</div><div class="num" id="dofHyper">5.32 m</div></div>
+    </div>
+    <div class="depthbar">
+      <div class="depthseg" id="depthSeg"></div>
+      <div class="depthmark" id="depthFocus"></div>
+      <div class="depthmark subj" id="depthSubj"></div>
+    </div>
+    <div class="depthticks" id="depthTicks"></div>
+    <div class="legend"><i style="background:rgba(62,207,111,.6)"></i>ピントが合う範囲<i style="background:var(--amber)"></i>合焦位置<i style="background:#7ab8ff"></i>被写体</div>
+  </div>
+
+  <!-- 練習モード -->
+  <div class="card">
+    <h2>距離当て練習</h2>
+    <p class="note" style="margin-top:0">被写体距離を隠して出題します。ファインダーの二重像だけを頼りに距離環で合わせ、「答え合わせ」を押してください。</p>
+    <div class="btnrow" style="margin-top:0">
+      <button id="practiceBtn" type="button" class="primary">練習をはじめる</button>
+      <button id="checkBtn" type="button" disabled>答え合わせ</button>
+      <button id="nextBtn" type="button" disabled>次の問題</button>
+    </div>
+    <div class="result" id="practiceResult"></div>
+  </div>
+
+  <!-- 目測の目安 -->
+  <div class="card">
+    <h2>目測の目安表</h2>
+    <table class="guide">
+      <tr><th style="width:58%">目安</th><th>およその距離</th></tr>
+      <tr><td>向かいの席の相手、カフェの対面</td><td>1〜2 m</td></tr>
+      <tr><td>人の表情がはっきり分かる</td><td>3〜5 m</td></tr>
+      <tr><td>人の顔が見分けられる</td><td>約10 m</td></tr>
+      <tr><td>腕を伸ばした親指の高さに、人の全身がほぼ重なる</td><td>約15〜20 m</td></tr>
+      <tr><td>人の姿は分かるが顔は判別できない</td><td>20 m 以上</td></tr>
+    </table>
+    <p class="note">現場で距離環の初期位置を決めるときの手がかりです。最後は二重像で追い込んでください。</p>
+  </div>
+
+  <!-- フォーカスログ -->
+  <div class="card">
+    <h2>フォーカスログ</h2>
+    <p class="note" style="margin-top:0">今の設定（焦点距離・絞り・合焦距離・被写界深度）をメモ付きで残せます。記録はこの端末の中だけに保存されます。</p>
+    <textarea id="memo" maxlength="200" placeholder="メモ（最大200字）例：夕方の路地、逆光ぎみ"></textarea>
+    <div class="btnrow">
+      <button id="logBtn" type="button" class="primary">この設定を記録する</button>
+    </div>
+    <div id="logList"></div>
+  </div>
+
+  <!-- 使い方 -->
+  <div class="card howto">
+    <h2>使い方</h2>
+    <ol style="margin:0;padding-left:20px">
+      <li>このアプリは、ライカ式レンジファインダーの「二重像合致」を練習するためのシミュレーターです。<strong>実際の距離を自動で測るものではありません。</strong></li>
+      <li>被写体プリセットを選ぶと、ファインダー中央のパッチの中で像が二重にずれます。</li>
+      <li>距離環のスライダー（または「近く／遠く」ボタン）を動かし、二つの像がぴたりと重なったら合焦です。「合焦」の表示が出ます。</li>
+      <li>焦点距離と絞りを変えると、ブライトフレームの大きさと被写界深度（ピントが合う範囲）が変わります。深度バーで前端・後端・過焦点距離を確認できます。</li>
+      <li>「過焦点に合わせる」「ゾーンフォーカス f/8」は、スナップ撮影でよく使う合わせ方のショートカットです。</li>
+      <li>慣れてきたら「距離当て練習」で、距離を隠した出題に挑戦してみてください。誤差％と講評が出ます。</li>
+      <li>よく使う組み合わせはフォーカスログに残しておくと、現場で迷いません。</li>
+    </ol>
+  </div>
+
+  <footer class="muse">
+    <p>このアプリは Muse と一緒に作ったアプリです。<br>
+    <a href="https://muse.ai/join" target="_blank" rel="noopener">Muse をはじめる（紹介リンク）</a>　紹介コード：84A2JY</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var COC = 0.029;            // 許容錯乱円 mm（フルサイズ）
+  var FT = 3.28084;           // m → ft
+  var STEPS = [0.7,0.8,0.9,1,1.2,1.5,1.7,2,2.5,3,4,5,7,10,15,30,Infinity]; // 17段
+  var TICKS = [0,3,5,7,9,11,13,16];
+  var FOCALS = [21,28,35,50,75,90];
+  var APERTURES = [1.4,2,2.8,4,5.6,8,11,16];
+  var PRESETS = [
+    {name:"ポートレート", d:1.2},
+    {name:"カフェの対面", d:2},
+    {name:"路地の人物", d:3},
+    {name:"通りの向こう", d:5},
+    {name:"街並み", d:8},
+    {name:"遠景", d:15}
+  ];
+  var POOL = [1,1.5,2,2.5,3,3.5,4,5,6,8,10]; // 1〜10m の11値
+  var LOG_KEY = "rangefinder.focusLog.v1";
+
+  var state = {
+    focal: 35, ap: 8, focus: 3, subject: 3, subjectName: "路地の人物",
+    unit: "m", practice: false, practiceSubject: null, answered: false
+  };
+
+  function $(id){ return document.getElementById(id); }
+  var ring = $("ring"), focusRead = $("focusRead"), subjBadge = $("subjBadge"), matchBadge = $("matchBadge");
+
+  /* ---------- 表示フォーマット ---------- */
+  function fmtM(m){ // 距離（m）を現在の単位で
+    if (!isFinite(m)) return "∞";
+    if (state.unit === "ft") return (m * FT).toFixed(1) + " ft";
+    return m.toFixed(2) + " m";
+  }
+  function fmtTick(m){
+    if (!isFinite(m)) return "∞";
+    if (state.unit === "ft") return String(Math.round(m * FT * 10) / 10);
+    return String(m);
+  }
+
+  /* ---------- 被写界深度 ---------- */
+  function calcDOF(){
+    var f = state.focal, N = state.ap, s = state.focus * 1000; // mm
+    var H = f * f / (N * COC) + f;                              // 過焦点距離 mm
+    var near = s * (H - f) / (H + s - 2 * f);
+    var far = (s >= H) ? Infinity : s * (H - f) / (H - s);
+    return { H: H / 1000, near: near / 1000, far: far / 1000 };
+  }
+
+  /* ---------- ファインダー ---------- */
+  var personMain = $("personMain"), personGhost = $("personGhost"),
+      ghostPole = $("ghostPole"), brightFrame = $("brightFrame");
+  function renderFinder(){
+    var subj = state.subject;
+    var scale = Math.max(0.32, Math.min(2.0, 3 / subj));
+    personMain.setAttribute("transform", "translate(180,188) scale(" + scale + ")");
+    var focusD = isFinite(state.focus) ? 1 / state.focus : 0;
+    var diff = focusD - 1 / subj;                    // diopter差
+    var offset = Math.max(-90, Math.min(90, diff * 140));
+    personGhost.setAttribute("transform", "translate(" + (180 + offset) + ",188) scale(" + scale + ")");
+    ghostPole.setAttribute("x", String(178.6 + offset));
+    // ブライトフレーム（焦点距離で大きさが変わる）
+    var w = Math.max(86, Math.min(342, 224 * 35 / state.focal));
+    var h = w * 0.695;
+    brightFrame.setAttribute("x", String(180 - w / 2));
+    brightFrame.setAttribute("y", String(120 - h / 2));
+    brightFrame.setAttribute("width", String(w));
+    brightFrame.setAttribute("height", String(h));
+    // 合致判定 |diff| < 0.035
+    var matched = Math.abs(diff) < 0.035;
+    matchBadge.textContent = matched ? "合焦" : "ずれています";
+    matchBadge.className = "badge " + (matched ? "ok" : "off");
+    if (state.practice && !state.answered) {
+      subjBadge.textContent = "被写体：？（練習中）?.?? " + (state.unit === "ft" ? "ft" : "m");
+    } else {
+      subjBadge.textContent = "被写体：" + state.subjectName + "（" + fmtM(subj) + "）";
+    }
+  }
+
+  /* ---------- 深度バー（対数 0.5〜60m） ---------- */
+  var LMIN = Math.log(0.5), LMAX = Math.log(60);
+  function logPos(d){
+    if (!isFinite(d)) return 100;
+    var p = (Math.log(Math.max(0.5, Math.min(60, d))) - LMIN) / (LMAX - LMIN) * 100;
+    return Math.max(0, Math.min(100, p));
+  }
+  function renderDepth(d){
+    var seg = $("depthSeg");
+    var left = logPos(d.near), right = logPos(d.far);
+    seg.style.left = left + "%";
+    seg.style.width = Math.max(1.5, right - left) + "%";
+    $("depthFocus").style.left = "calc(" + logPos(state.focus) + "% - 1px)";
+    var subjEl = $("depthSubj");
+    if (state.practice && !state.answered) {
+      subjEl.style.display = "none";
+    } else {
+      subjEl.style.display = "block";
+      subjEl.style.left = "calc(" + logPos(state.subject) + "% - 1px)";
+    }
+  }
+
+  /* ---------- 全体描画 ---------- */
+  function nearestStepIndex(v){
+    if (!isFinite(v)) return 16;
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < STEPS.length; i++) {
+      var sv = STEPS[i];
+      var dd = isFinite(sv) ? Math.abs(Math.log(sv / v)) : Infinity;
+      if (dd < bd) { bd = dd; best = i; }
+    }
+    return best;
+  }
+  function render(){
+    focusRead.textContent = fmtM(state.focus);
+    ring.value = String(nearestStepIndex(state.focus));
+    var d = calcDOF();
+    $("dofNear").textContent = fmtM(d.near);
+    $("dofFar").textContent = fmtM(d.far);
+    $("dofHyper").textContent = fmtM(d.H);
+    renderFinder();
+    renderDepth(d);
+    // 目盛ラベル（単位連動）
+    var tk = $("ticks"); tk.innerHTML = "";
+    TICKS.forEach(function(i){
+      var s = document.createElement("span");
+      s.style.left = (i / 16 * 100) + "%";
+      s.textContent = fmtTick(STEPS[i]);
+      tk.appendChild(s);
+    });
+    // プリセット選択状態
+    Array.prototype.forEach.call($("presets").children, function(btn, idx){
+      btn.classList.toggle("sel", !state.practice && PRESETS[idx].d === state.subject && PRESETS[idx].name === state.subjectName);
+    });
+    Array.prototype.forEach.call($("focals").children, function(btn, idx){
+      btn.classList.toggle("sel", FOCALS[idx] === state.focal);
+    });
+    Array.prototype.forEach.call($("apertures").children, function(btn, idx){
+      btn.classList.toggle("sel", APERTURES[idx] === state.ap);
+    });
+    Array.prototype.forEach.call($("units").children, function(btn){
+      btn.classList.toggle("sel", btn.getAttribute("data-unit") === state.unit);
+    });
+    $("subjBtn").disabled = state.practice;
+  }
+
+  /* ---------- 距離環 ---------- */
+  ring.addEventListener("input", function(){
+    state.focus = STEPS[parseInt(ring.value, 10)];
+    render();
+  });
+  $("nearBtn").addEventListener("click", function(){
+    var i = Math.max(0, nearestStepIndex(state.focus) - 1);
+    state.focus = STEPS[i]; render();
+  });
+  $("farBtn").addEventListener("click", function(){
+    var i = Math.min(16, nearestStepIndex(state.focus) + 1);
+    state.focus = STEPS[i]; render();
+  });
+  $("hyperBtn").addEventListener("click", function(){
+    state.focus = calcDOF().H; render();
+  });
+  $("zoneBtn").addEventListener("click", function(){
+    state.ap = 8;
+    state.focus = calcDOF().H; render();
+  });
+  $("subjBtn").addEventListener("click", function(){
+    if (!state.practice) { state.focus = state.subject; render(); }
+  });
+
+  /* ---------- プリセット・焦点距離・絞り・単位 ---------- */
+  var presetsEl = $("presets");
+  PRESETS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = "";
+    b.appendChild(document.createTextNode(p.name));
+    var small = document.createElement("small");
+    small.textContent = p.d + " m";
+    b.appendChild(small);
+    b.addEventListener("click", function(){
+      exitPractice();
+      state.subject = p.d; state.subjectName = p.name;
+      render();
+    });
+    presetsEl.appendChild(b);
+  });
+  var focalsEl = $("focals");
+  FOCALS.forEach(function(f){
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = f + "mm";
+    b.addEventListener("click", function(){ state.focal = f; render(); });
+    focalsEl.appendChild(b);
+  });
+  var apEl = $("apertures");
+  APERTURES.forEach(function(a){
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = "f/" + a;
+    b.addEventListener("click", function(){ state.ap = a; render(); });
+    apEl.appendChild(b);
+  });
+  Array.prototype.forEach.call($("units").children, function(btn){
+    btn.addEventListener("click", function(){
+      state.unit = btn.getAttribute("data-unit"); render();
+    });
+  });
+
+  /* ---------- 深度バーの目盛 ---------- */
+  (function(){
+    var dt = $("depthTicks");
+    [0.5, 1, 2, 5, 10, 20, 60].forEach(function(v){
+      var s = document.createElement("span");
+      s.style.left = logPos(v) + "%";
+      s.textContent = String(v);
+      dt.appendChild(s);
+    });
+  })();
+
+  /* ---------- 練習モード ---------- */
+  var practiceBtn = $("practiceBtn"), checkBtn = $("checkBtn"), nextBtn = $("nextBtn"), resultEl = $("practiceResult");
+  function pickProblem(){
+    var v;
+    do { v = POOL[Math.floor(Math.random() * POOL.length)]; } while (v === state.practiceSubject);
+    state.practiceSubject = v;
+    state.subject = v;
+    state.subjectName = "練習の被写体";
+    state.answered = false;
+  }
+  function exitPractice(){
+    state.practice = false; state.practiceSubject = null; state.answered = false;
+    practiceBtn.textContent = "練習をはじめる";
+    checkBtn.disabled = true; nextBtn.disabled = true;
+    resultEl.textContent = "";
+  }
+  practiceBtn.addEventListener("click", function(){
+    if (state.practice) { exitPractice(); render(); return; }
+    state.practice = true;
+    pickProblem();
+    practiceBtn.textContent = "練習をやめる";
+    checkBtn.disabled = false; nextBtn.disabled = true;
+    resultEl.textContent = "被写体距離は隠れています。二重像を頼りに距離環で合わせてください。";
+    render();
+  });
+  checkBtn.addEventListener("click", function(){
+    if (!state.practice || state.answered) return;
+    state.answered = true;
+    var ans = state.practiceSubject;
+    var err = Math.abs(state.focus - ans) / ans * 100;
+    var comment;
+    if (err <= 5) comment = "ほぼ完璧です。二重像の読みが冴えています。";
+    else if (err <= 15) comment = "いい感じです。実用十分の精度です。";
+    else if (err <= 30) comment = "あと少し。像の芯が重なる感覚をもう一度確かめてみましょう。";
+    else comment = "大きく外れています。まず目測で当たりを付けてから追い込むと安定します。";
+    var dir = "";
+    if (err > 5) dir = state.focus < ans ? "（手前＝近くに合わせすぎ）" : "（奥＝遠くに合わせすぎ）";
+    resultEl.innerHTML = "";
+    var line1 = document.createElement("div");
+    line1.textContent = "答え：" + fmtM(ans) + " ／ あなたの合焦：" + fmtM(state.focus);
+    var line2 = document.createElement("div");
+    var errSpan = document.createElement("span");
+    errSpan.className = "err";
+    errSpan.textContent = "誤差 " + err.toFixed(1) + "％";
+    line2.appendChild(errSpan);
+    line2.appendChild(document.createTextNode(" " + dir));
+    var line3 = document.createElement("div");
+    line3.textContent = comment;
+    resultEl.appendChild(line1); resultEl.appendChild(line2); resultEl.appendChild(line3);
+    nextBtn.disabled = false;
+    render();
+  });
+  nextBtn.addEventListener("click", function(){
+    if (!state.practice) return;
+    pickProblem();
+    checkBtn.disabled = false; nextBtn.disabled = true;
+    resultEl.textContent = "次の問題です。被写体距離は隠れています。";
+    render();
+  });
+
+  /* ---------- フォーカスログ（localStorage） ---------- */
+  function loadLog(){
+    try {
+      var raw = localStorage.getItem(LOG_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function saveLog(arr){
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+  function renderLog(){
+    var list = $("logList");
+    var arr = loadLog();
+    list.innerHTML = "";
+    if (arr.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "まだ記録がありません。よく使う焦点距離・絞り・距離の組み合わせを残しておくと、現場で迷いません。";
+      list.appendChild(empty);
+      return;
+    }
+    arr.forEach(function(entry, idx){
+      var item = document.createElement("div");
+      item.className = "logitem";
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "del"; del.textContent = "削除";
+      del.addEventListener("click", function(){
+        var a = loadLog(); a.splice(idx, 1); saveLog(a); renderLog();
+      });
+      var main = document.createElement("div");
+      main.className = "main";
+      main.textContent = entry.focal + "mm　f/" + entry.ap + "　合焦 " + entry.focusLabel;
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "深度 " + entry.nearLabel + " 〜 " + entry.farLabel + "　／　" + entry.dateText;
+      item.appendChild(del);
+      item.appendChild(main);
+      item.appendChild(meta);
+      if (entry.memo) {
+        var memo = document.createElement("div");
+        memo.className = "memo";
+        memo.textContent = entry.memo;
+        item.appendChild(memo);
+      }
+      list.appendChild(item);
+    });
+  }
+  $("logBtn").addEventListener("click", function(){
+    var d = calcDOF();
+    var now = new Date();
+    var pad = function(n){ return (n < 10 ? "0" : "") + n; };
+    var dateText = now.getFullYear() + "/" + pad(now.getMonth() + 1) + "/" + pad(now.getDate()) +
+                   " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
+    var entry = {
+      ts: now.getTime(),
+      focal: state.focal,
+      ap: state.ap,
+      focusLabel: fmtM(state.focus),
+      nearLabel: fmtM(d.near),
+      farLabel: fmtM(d.far),
+      memo: $("memo").value.slice(0, 200),
+      dateText: dateText
+    };
+    var arr = loadLog();
+    arr.unshift(entry);
+    if (arr.length > 50) arr = arr.slice(0, 50);
+    saveLog(arr);
+    $("memo").value = "";
+    renderLog();
+  });
+
+  render();
+  renderLog();
+})();
+</script>
+</body>
+</html>
